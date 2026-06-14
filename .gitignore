@@ -1,0 +1,19 @@
+# Agent secrets
+achilles/.env
+chiron/.env
+
+# Docker-mounted agent runtime data
+achilles/data/
+chiron/data/
+
+# Local environment overrides
+.env
+.env.*
+!.env.example
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

@@ -1,0 +1,24 @@
+services:
+    chiron:
+        image: nousresearch/hermes-agent:latest
+        container_name: chiron
+        restart: unless-stopped
+        command: gateway run
+
+        env_file:
+            - ./chiron/.env
+        volumes:
+            - ./chiron/data:/opt/data
+        shm_size: 1g
+
+    achilles:
+        image: nousresearch/hermes-agent:latest
+        container_name: achilles
+        restart: unless-stopped
+        command: gateway run
+
+        env_file:
+            - ./achilles/.env
+        volumes:
+            - ./achilles/data:/opt/data
+        shm_size: 1g
