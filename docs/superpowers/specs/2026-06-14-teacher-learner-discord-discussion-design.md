@@ -14,6 +14,35 @@ human observer deeply understand a problem.
 The discussion must explain core principles, explore related knowledge, expose
 misunderstandings, and conclude with a useful observer-facing summary.
 
+## Goal
+
+Create a structured Discord discussion where Chiron teaches and Achilles
+challenges inside one shared thread, helping the observer develop a correct,
+practical understanding of the selected topic without duplicate responses or
+missing context.
+
+## Acceptance Criteria
+
+The implementation is complete when all of these criteria pass in Discord and
+gateway logs:
+
+1. Mentioning only Chiron in `#discussion` creates exactly one thread.
+2. Chiron starts inside that thread with `[Round 1/10]` and mentions Achilles.
+3. Achilles does not respond before Chiron mentions it.
+4. Chiron, Achilles, and the observer use one shared Hermes thread session.
+5. Each agent can reference relevant prior turns from the thread.
+6. Exactly one agent responds per valid turn.
+7. All agent turns remain inside the discussion thread.
+8. Round markers alternate correctly and never exceed round 10.
+9. Unmentioned messages trigger neither agent.
+10. A thread-local `STOP DISCUSSION` mentioning both agents stops further
+    replies.
+11. Chiron ends with exactly one `Observer Summary`.
+12. The `Observer Summary` captures principles, conclusions, trade-offs,
+    further exploration, and uncertainty.
+13. Gateway logs show no duplicate, concurrent, or out-of-thread agent
+    responses.
+
 ## Scope
 
 This design uses Hermes' existing Discord bot-message support and agent persona
