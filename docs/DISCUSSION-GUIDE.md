@@ -21,11 +21,12 @@ Both `chiron` and `achilles` should show an `Up` status.
 
 ## Trigger A Discussion
 
-Post the following template in `#discussion`. Replace the placeholders and use
-Discord's mention picker so both bot mentions are real mentions.
+Post the following template in the parent `#discussion` channel. Replace the
+placeholders and use Discord's mention picker so the Chiron mention is a real
+mention. The lobby trigger must mention only Chiron.
 
 ```text
-@cris_chiron @cris_achilles
+@cris_chiron
 
 DISCUSSION TOPIC:
 Explain [problem or topic].
@@ -39,26 +40,29 @@ FOCUS ON:
 - Important trade-offs and edge cases
 - Common misunderstandings
 
-Chiron: lead the discussion.
-Achilles: wait for Chiron, then challenge, apply, and summarize.
+Chiron: start the discussion in the thread, teach, and lead the rounds.
 ```
 
 Expected behavior:
 
-1. Only Chiron responds to the trigger.
-2. Chiron begins with `[Round 1/10]` and mentions Achilles.
-3. Achilles replies with the same round marker and mentions Chiron.
-4. Chiron advances the round number.
-5. Chiron eventually closes without mentioning Achilles and includes one
-   `Observer Summary`.
+1. Mentioning only Chiron in `#discussion` auto-creates a new thread for that
+   topic.
+2. Chiron posts the first reply inside that thread, not in the parent lobby.
+3. Chiron begins with `[Round 1/10]` and explicitly mentions Achilles.
+4. Achilles stays silent until Chiron mentions it inside the thread.
+5. All active discussion turns stay inside the thread and alternate one agent
+   at a time.
+6. Unmentioned messages do not trigger either agent.
+7. Chiron eventually closes with exactly one `Observer Summary` and does not
+   mention Achilles in that closing message.
 
-Do not separately mention Achilles to ask it to begin. Achilles must wait for
-Chiron's first teaching turn.
+Do not mention Achilles in the lobby trigger. Do not continue the discussion in
+the parent `#discussion` channel after the thread is created.
 
 ## Example Trigger
 
 ```text
-@cris_chiron @cris_achilles
+@cris_chiron
 
 DISCUSSION TOPIC:
 Explain why distributed systems cannot guarantee consistency, availability,
@@ -73,42 +77,51 @@ FOCUS ON:
 - Strong versus eventual consistency
 - Common misunderstandings about CAP
 
-Chiron: lead the discussion.
-Achilles: wait for Chiron, then challenge, apply, and summarize.
+Chiron: start the discussion in the thread, teach, and lead the rounds.
 ```
 
 ## Guide An Active Discussion
 
-Post guidance in `#discussion` without mentioning either agent:
+Post guidance inside the active discussion thread and explicitly mention Chiron:
 
 ```text
+@cris_chiron
+
 OBSERVER GUIDANCE:
 Please use a concrete example involving [scenario] in the next teaching turn.
 ```
 
 ```text
+@cris_chiron
+
 OBSERVER QUESTION:
 Please clarify [specific uncertainty] in the next teaching turn.
 ```
 
 ```text
+@cris_chiron
+
 OBSERVER GUIDANCE:
 Ask Achilles to provide a full summary and test its understanding.
 ```
 
-Chiron should incorporate the guidance into its next valid teaching turn.
+Guidance posted in the parent lobby should not affect an active discussion.
 Achilles should not treat observer guidance as permission to lead.
 
 ## Stop A Discussion
 
-Post this exact command in `#discussion`:
+Post this inside the active discussion thread and explicitly mention both agents:
 
 ```text
-STOP DISCUSSION
+@cris_chiron @cris_achilles STOP DISCUSSION
 ```
 
-After sending it, verify that neither agent mentions the other or continues the
-discussion.
+`STOP DISCUSSION` in the parent lobby, or without both mentions, should not
+stop the discussion.
+
+After sending the thread-local stop command, Chiron may acknowledge once with
+`[Discussion stopped]`. Achilles should remain silent, and neither agent should
+continue the discussion after that.
 
 If the agents continue replying to each other, stop the gateways immediately:
 
@@ -119,15 +132,16 @@ docker compose stop chiron achilles
 ## Start A New Discussion
 
 Wait until the previous discussion has closed or been stopped. Then post a new
-joint-mention trigger using the template above.
+Chiron-only trigger in the parent `#discussion` lobby using the template above.
 
 Do not try to continue a stopped discussion by manually creating round markers.
 
 ## Safety Limitation
 
-Round tracking, malformed-message handling, and stop behavior are governed by
-prompts rather than a deterministic coordinator. Live verification showed that
-malformed bot-authored messages can still cause an agent-to-agent reply loop.
+Round tracking, malformed-message handling, and completion are governed by
+prompts rather than a deterministic coordinator. Thread creation, shared
+transcript routing, and explicit-mention turn addressing are handled by Hermes
+and Discord.
 
 Avoid manually sending messages that imitate agent turns, including:
 
@@ -135,8 +149,8 @@ Avoid manually sending messages that imitate agent turns, including:
 [Round N/10]
 ```
 
-If a discussion becomes malformed, duplicated, or out of order, stop both
-gateways with:
+If a discussion becomes malformed, duplicated, or out of order, treat that as a
+bug and stop both gateways with:
 
 ```bash
 docker compose stop chiron achilles
@@ -145,6 +159,34 @@ docker compose stop chiron achilles
 Then remove the malformed Discord messages before restarting the crew.
 
 ## Troubleshooting
+
+If the wrong thing happens, check these first:
+
+- No thread was created: confirm the start message was posted in the parent
+  `#discussion` channel and mentioned only Chiron.
+- Achilles replied too early: confirm Chiron mentioned Achilles inside the
+  thread, and that Achilles was not mentioned in the lobby trigger.
+- An agent replied in the parent lobby: treat that as incorrect behavior. Active
+  turns belong in the thread only.
+- Human guidance was ignored: confirm it was posted inside the active thread and
+  explicitly mentioned Chiron.
+- `STOP DISCUSSION` did nothing: confirm it was posted inside the active thread
+  and explicitly mentioned both agents.
+- An unmentioned message triggered a reply: treat that as incorrect behavior and
+  inspect the logs for mention handling.
+
+Expected acceptance checks during manual verification:
+
+1. A Chiron-only mention in `#discussion` creates one thread.
+2. Chiron starts in the thread with `[Round 1/10]` and mentions Achilles.
+3. Achilles does not respond before that mention.
+4. Chiron, Achilles, and the observer share one coherent thread transcript.
+5. All agent turns stay in the thread, with one valid reply per turn, and round
+   markers alternate correctly without exceeding `10`.
+6. Unmentioned human or bot messages do not trigger either agent.
+7. A valid thread-local `STOP DISCUSSION` mentioning both agents stops further
+   replies.
+8. Chiron ends with exactly one `Observer Summary`.
 
 Check service status:
 

@@ -7,8 +7,11 @@ services:
 
         env_file:
             - ./chiron/.env
+
         volumes:
             - ./chiron/data:/opt/data
+            - /Users/onedayin20902/obsidian/cris:/vault/obsidian:ro
+
         shm_size: 1g
 
     achilles:
@@ -19,6 +22,9 @@ services:
 
         env_file:
             - ./achilles/.env
+
         volumes:
             - ./achilles/data:/opt/data
+            - /Users/onedayin20902/obsidian/cris:/vault/obsidian:ro
+
         shm_size: 1g
